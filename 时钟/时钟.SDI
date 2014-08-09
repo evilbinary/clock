@@ -1,0 +1,307 @@
+,,,msecondl equ 20h
+,,,msecondh equ 21h
+,,,
+,,,secondl equ 22h
+,,,secondh equ 23h
+,,,minutel equ 24h
+,,,minuteh equ 25h
+,,,hourl   equ 26h
+,,,hourh   equ 27h
+,,,
+,,,fnkey   equ 28h
+,,,pluskey equ 29h
+,,,flage   equ 30h
+,,,
+,,,        org 00h
+0000,01 80,,        ajmp main
+,,,        org 000bh
+000B,21 F2,,        ajmp int_t0
+,,,        org 001bh
+001B,21 CE,,        ajmp int_t1
+,,,        org 80h
+0080,,main,main:
+0080,75 81 70,,        mov sp,#70h
+0083,75 B0 06,,        mov p3,#6
+0086,78 20,,        mov r0,#msecondl
+0088,76 08,,        mov @r0,#8
+008A,08,,        inc r0
+008B,76 02,,        mov @r0,#2
+008D,08,,        inc r0
+008E,76 08,,        mov @r0,#8
+0090,08,,        inc r0
+0091,76 05,,        mov @r0,#5
+0093,08,,        inc r0
+0094,76 09,,        mov @r0,#9
+0096,08,,        inc r0
+0097,76 05,,        mov @r0,#5
+0099,08,,        inc r0
+009A,76 03,,        mov @r0,#3
+009C,08,,        inc r0
+009D,76 02,,        mov @r0,#2
+,,,
+009F,75 89 15,,        mov tmod,#15h                           ;t1  t0
+00A2,75 8D D8,,        mov th1,#0d8h                           ;12MHZ 10ms
+00A5,75 8B F0,,        mov tl1,#0f0h
+00A8,D2 8E,,        setb tr1
+00AA,D2 AB,,        setb et1
+00AC,75 8C FF,,        mov th0,#0ffh
+00AF,75 8A FE,,        mov tl0,#0feh
+00B2,D2 8C,,        setb tr0
+00B4,D2 A9,,        setb et0
+,,,
+00B6,D2 AF,,        setb ea
+00B8,75 28 00,,        mov fnkey,#0
+00BB,75 29 00,,        mov pluskey,#0
+00BE,75 30 00,,        mov flage,#0
+,,,
+00C1,,ll,ll:
+,,,        ;mov r0,#hourh
+,,,        ;mov r0,#minuteh
+,,,        ;call display_led
+00C1,12 00 F6,,        call keyprocess
+00C4,80 FB,,        jmp ll
+00C6,80 FE,,        jmp $
+,,,
+00C8,,keyscan_down,keyscan_down:
+00C8,E5 30,,        mov a,flage
+00CA,60 04,,        jz kd1
+00CC,78 25,,        mov r0,#minuteh
+00CE,01 D2,,        ajmp kd2
+00D0,,kd1,kd1:
+00D0,78 27,,        mov r0,#hourh
+00D2,,kd2,kd2:
+00D2,12 01 50,,        call display_led
+00D5,75 B0 FF,,        mov P3,#0ffh
+00D8,E5 B0,,        mov a,P3
+00DA,D2 E6,,        setb acc.6
+00DC,F4,,        cpl a
+00DD,60 E9,,        jz keyscan_down
+00DF,22,,        ret
+00E0,,keyscan_up,keyscan_up:
+00E0,E5 30,,        mov a,flage
+00E2,60 04,,        jz ku1
+00E4,78 25,,        mov r0,#minuteh
+00E6,01 EA,,        ajmp ku2
+00E8,,ku1,ku1:
+00E8,78 27,,        mov r0,#hourh
+00EA,,ku2,ku2:
+00EA,12 01 50,,        call display_led
+00ED,75 B0 FF,,        mov P3,#0ffh
+00F0,E5 B0,,        mov a,P3
+00F2,D2 E6,,        setb acc.6
+00F4,F4,,        cpl a
+00F5,22,,        ret
+,,,
+00F6,,keyprocess,keyprocess:
+00F6,11 C8,,        call keyscan_down
+00F8,60 43,,        jz return
+00FA,12 02 13,,        call delay1_1ms
+00FD,30 E3 19,,        jnb acc.3,keyplus
+0100,12 02 13,k1,k1:     call delay1_1ms
+0103,11 E0,,        call keyscan_up
+0105,70 F9,,    jnz k1
+,,,                                                ;keyfn
+0107,75 30 00,,        mov flage,#0
+010A,E5 28,,        mov a,fnkey
+010C,04,,        inc a
+010D,04,,        inc a
+010E,F5 28,,        mov fnkey,a
+0110,C3,,        clr c
+0111,94 08,,        subb a,#8
+0113,40 02,,        jc kk1
+0115,F5 28,,        mov fnkey,a
+0117,,kk1,kk1:
+0117,21 3D,,        ajmp return
+0119,,keyplus,keyplus:
+0119,30 E7 15,,         jnb acc.7,keyf
+011C,12 02 13,k2,k2:      call delay1_1ms
+011F,11 E0,,         call keyscan_up
+0121,70 F9,,     jnz k2                         ;keyplus
+,,,
+0123,75 29 01,,         mov pluskey,#1
+0126,E5 28,,         mov a,fnkey
+0128,70 05,,         jnz kkk1
+012A,E5 30,,         mov a,flage       ;;fn no enter
+012C,F4,,         cpl a
+012D,F5 30,,         mov flage,a
+012F,,kkk1,kkk1:
+,,,
+012F,21 3D,,         ajmp return
+0131,,keyf,keyf:
+0131,30 E4 09,,        jnb acc.4,return
+0134,12 02 13,k3,k3: call delay1_1ms
+0137,11 E0,,        call keyscan_up
+0139,70 F9,,        jnz k3
+,,,                                                 ;keyf
+013B,21 3D,,        ajmp return
+013D,,return,return:
+013D,E5 28,,        mov a,fnkey
+013F,60 0E,,        jz kp1
+0141,E5 29,,        mov a,pluskey
+0143,60 0A,,        jz kp1
+0145,C3,,        clr c
+0146,74 28,,        mov a,#28h
+0148,95 28,,        subb a,fnkey
+014A,F8,,        mov r0,a
+014B,06,,        inc @r0
+014C,75 29 00,,        mov pluskey,#0
+014F,,kp1,kp1:
+,,,
+,,,        ;jz kp2
+,,,
+,,,;kp2:
+,,,
+014F,22,,        ret
+,,,
+,,,
+,,,;r0 witch to display
+0150,,display_led,display_led:
+,,,        ;mov r0,#hourh
+,,,        ;mov r0,#minuteh
+0150,90 02 1A,,        mov dptr,#ledcode
+0153,79 00,,        mov r1,#0       ;count
+0155,,d1,d1:
+,,,        ;mov p1,#0ffh
+0155,75 B0 06,,        mov p3,#6
+0158,E6,,        mov a,@r0
+0159,93,,        movc a,@a+dptr
+015A,F5 90,,        mov p1,a
+015C,E9,,        mov a,r1
+015D,44 F8,,        orl a,#0f8h
+015F,F5 B0,,        mov p3,a
+0161,12 02 0C,,        call delay_1ms
+0164,09,,        inc r1
+0165,18,,        dec r0
+0166,B9 06 EC,,        cjne r1,#6,d1
+0169,22,,        ret
+,,,
+016A,,ajust_led,ajust_led:
+016A,C3,,        clr c
+016B,E5 20,,        mov a,msecondl
+016D,94 0A,,        subb a,#10
+016F,40 04,,        jc a1
+0171,F5 20,,        mov msecondl,a
+0173,05 21,,        inc msecondh
+0175,,a1,a1:
+0175,C3,,        clr c
+0176,E5 21,,        mov a,msecondh
+0178,94 09,,        subb a,#9
+017A,40 04,,        jc a2
+017C,F5 21,,        mov  msecondh,a
+017E,05 22,,        inc secondl
+0180,,a2,a2:
+0180,C3,,        clr c                    ;second
+0181,E5 22,,        mov a,secondl
+0183,94 0A,,        subb a,#10
+0185,40 04,,        jc a3
+0187,F5 22,,        mov secondl,a
+0189,05 23,,        inc secondh
+018B,,a3,a3:
+018B,C3,,        clr c
+018C,E5 23,,        mov a,secondh
+018E,94 06,,        subb a,#6
+0190,40 04,,        jc a4
+0192,F5 23,,        mov secondh,a
+0194,05 24,,        inc minutel
+0196,,a4,a4:
+0196,C3,,        clr c                   ;minute
+0197,E5 24,,        mov a,minutel
+0199,94 0A,,        subb a,#10
+019B,40 04,,        jc a5
+019D,F5 24,,        mov minutel,a
+019F,05 25,,        inc minuteh
+01A1,,a5,a5:
+01A1,C3,,        clr c
+01A2,E5 25,,        mov a,minuteh
+01A4,94 06,,        subb a,#6
+01A6,40 04,,        jc a6
+01A8,F5 25,,        mov minuteh,a
+01AA,05 26,,        inc hourl
+01AC,,a6,a6:
+01AC,C3,,        clr c              ;hour
+01AD,E5 26,,        mov a,hourl
+01AF,94 0A,,        subb a,#10
+01B1,40 04,,        jc a7
+01B3,F5 26,,        mov hourl,a
+01B5,05 27,,        inc hourh
+01B7,,a7,a7:
+01B7,C3,,        clr c
+01B8,E5 27,,        mov a,hourh
+01BA,94 02,,        subb a,#2
+01BC,40 0D,,        jc a8
+01BE,C3,,        clr c
+01BF,E5 26,,        mov a,hourl
+01C1,94 04,,        subb a,#4
+01C3,40 06,,        jc a8
+01C5,75 27 00,,        mov hourh,#0
+01C8,75 26 00,,        mov hourl,#0
+01CB,,a8,a8:
+01CB,21 CD,,        ajmp aend
+,,,
+,,,
+01CD,,aend,aend:
+01CD,22,,        ret
+,,,
+01CE,,int_t1,int_t1:
+01CE,C0 E0,,        push acc
+01D0,C0 D0,,        push psw
+01D2,88 E0,,        mov acc,r0
+01D4,C0 E0,,        push acc
+01D6,89 E0,,        mov acc,r1
+01D8,C0 E0,,        push acc
+,,,
+01DA,78 21,,        mov r0,#msecondh
+01DC,E6,,        mov a,@r0
+01DD,24 01,,        add a,#1
+01DF,F6,,        mov @r0,a
+,,,
+,,,
+,,,        ;mov p3,#6
+01E0,75 90 00,,        mov p1,#00
+01E3,31 6A,,        call ajust_led
+,,,
+01E5,D0 E0,,        pop acc
+01E7,A9 E0,,        mov r1,acc
+01E9,D0 E0,,        pop acc
+01EB,A8 E0,,        mov r0,acc
+01ED,D0 D0,,        pop psw
+01EF,D0 E0,,        pop acc
+01F1,32,,        reti
+01F2,,int_t0,int_t0:
+01F2,C0 E0,,        push acc
+01F4,C0 D0,,        push psw
+01F6,88 E0,,        mov acc,r0
+01F8,C0 E0,,        push acc
+01FA,89 E0,,        mov acc,r1
+01FC,C0 E0,,        push acc
+,,,
+,,,        ;call ajust_led
+,,,
+01FE,D0 E0,,        pop acc
+0200,A9 E0,,        mov r1,acc
+0202,D0 E0,,        pop acc
+0204,A8 E0,,        mov r0,acc
+0206,D0 D0,,        pop psw
+0208,D0 E0,,        pop acc
+020A,32,,        reti
+020B,32,,        reti
+,,,
+,,,
+020C,,delay_1ms,delay_1ms:
+020C,7F FA,,        mov r7,#250
+020E,,dly,dly:
+020E,00,,        nop             ;1us 12MHZ
+020F,00,,        nop             ;1us 12MHZ
+0210,DF FC,,        djnz r7,dly ;2us 12MHZ
+0212,22,,        ret
+,,,
+0213,,delay1_1ms,delay1_1ms:
+0213,7F 1F,,        mov r7,#01fh
+0215,,dly1,dly1:
+0215,00,,        nop             ;1us 12MHZ
+0216,00,,        nop             ;1us 12MHZ
+0217,DF F5,,        djnz r7,dly ;2us 12MHZ
+0219,22,,        ret
+,,,
+021A,3F 06 5B 4F,ledcode,ledcode: db 3fh,06h,5bh,4fh,66h,6dh,7dh,07h,7fh,6fh,0ffh
+000E,,,        end

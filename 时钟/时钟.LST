@@ -1,0 +1,405 @@
+A51 MACRO ASSEMBLER   _÷”                                                                 04/28/2011 19:42:20 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.01
+OBJECT MODULE PLACED IN  ±÷”.OBJ
+ASSEMBLER INVOKED BY: D:\Program Files\Keil\C51\BIN\A51.EXE  ±÷”.asm SET(SMALL) DEBUG EP
+
+LOC  OBJ            LINE     SOURCE
+
+  0020                 1     msecondl equ 20h
+  0021                 2     msecondh equ 21h
+                       3     
+  0022                 4     secondl equ 22h
+  0023                 5     secondh equ 23h
+  0024                 6     minutel equ 24h
+  0025                 7     minuteh equ 25h
+  0026                 8     hourl   equ 26h
+  0027                 9     hourh   equ 27h
+                      10     
+  0028                11     fnkey   equ 28h
+  0029                12     pluskey equ 29h
+  0030                13     flage   equ 30h
+                      14             
+0000                  15             org 00h
+0000 0180             16             ajmp main
+000B                  17             org 000bh
+000B 21EA             18             ajmp int_t0
+001B                  19             org 001bh
+001B 21C6             20             ajmp int_t1
+0080                  21             org 80h
+0080                  22     main:
+0080 758170           23             mov sp,#70h
+0083 75B006           24             mov p3,#6
+0086 7820             25             mov r0,#msecondl
+0088 7608             26             mov @r0,#8
+008A 08               27             inc r0
+008B 7602             28             mov @r0,#2
+008D 08               29             inc r0
+008E 7608             30             mov @r0,#8
+0090 08               31             inc r0
+0091 7605             32             mov @r0,#5
+0093 08               33             inc r0
+0094 7609             34             mov @r0,#9
+0096 08               35             inc r0
+0097 7605             36             mov @r0,#5
+0099 08               37             inc r0
+009A 7603             38             mov @r0,#3
+009C 08               39             inc r0
+009D 7602             40             mov @r0,#2
+                      41     
+009F 758916           42             mov tmod,#16h                           ;t1  t0
+00A2 758DD8           43             mov th1,#0d8h                           ;12MHZ 10ms
+00A5 758BF0           44             mov tl1,#0f0h
+00A8 D28E             45             setb tr1
+00AA D2AB             46             setb et1
+00AC 758CF0           47             mov th0,#0f0h
+00AF 758AF0           48             mov tl0,#0f0h
+00B2 D28C             49             setb tr0
+00B4 D2A9             50             setb et0
+                      51     
+00B6 D2AF             52             setb ea
+00B8 752800           53             mov fnkey,#0
+00BB 752900           54             mov pluskey,#0
+00BE 753000           55             mov flage,#0
+                      56     
+00C1                  57     ll:
+                      58             ;mov r0,#hourh
+A51 MACRO ASSEMBLER   _÷”                                                                 04/28/2011 19:42:20 PAGE     2
+
+                      59             ;mov r0,#minuteh
+                      60             ;call display_led
+00C1 11F3             61             call keyprocess
+00C3 80FC             62             jmp ll
+00C5 80FE             63             jmp $
+                      64     
+00C7                  65     keyscan_down:
+00C7 E530             66             mov a,flage
+00C9 6004             67             jz kd1
+00CB 7825             68             mov r0,#minuteh
+00CD 01D1             69             ajmp kd2
+00CF                  70     kd1:
+00CF 7827             71             mov r0,#hourh
+00D1                  72     kd2:
+00D1 3149             73             call display_led
+00D3 75B0FF           74             mov P3,#0ffh
+00D6 E5B0             75             mov a,P3
+00D8 D2E6             76             setb acc.6
+00DA F4               77             cpl a
+00DB 60EA             78             jz keyscan_down 
+00DD 22               79             ret
+00DE                  80     keyscan_up:
+00DE E530             81             mov a,flage
+00E0 6004             82             jz ku1
+00E2 7825             83             mov r0,#minuteh
+00E4 01E8             84             ajmp ku2
+00E6                  85     ku1:
+00E6 7827             86             mov r0,#hourh
+00E8                  87     ku2:
+00E8 3149             88             call display_led
+00EA 75B0FF           89             mov P3,#0ffh
+00ED E5B0             90             mov a,P3
+00EF D2E6             91             setb acc.6
+00F1 F4               92             cpl a   
+00F2 22               93             ret
+                      94     
+00F3                  95     keyprocess:
+00F3 11C7             96             call keyscan_down
+00F5 603F             97             jz return
+00F7 510B             98             call delay1_1ms
+00F9 30E318           99             jnb acc.3,keyplus        
+00FC 510B            100     k1:     call delay1_1ms
+00FE 11DE            101             call keyscan_up
+0100 70FA            102         jnz k1
+                     103                                                     ;keyfn
+0102 753000          104             mov flage,#0
+0105 E528            105             mov a,fnkey
+0107 04              106             inc a
+0108 04              107             inc a
+0109 F528            108             mov fnkey,a
+010B C3              109             clr c
+010C 9408            110             subb a,#8
+010E 4002            111             jc kk1
+0110 F528            112             mov fnkey,a
+0112                 113     kk1:
+0112 2136            114             ajmp return
+0114                 115     keyplus:
+0114 30E714          116              jnb acc.7,keyf
+0117 510B            117     k2:      call delay1_1ms
+0119 11DE            118              call keyscan_up
+011B 70FA            119          jnz k2                         ;keyplus
+                     120              
+011D 752901          121              mov pluskey,#1
+0120 E528            122              mov a,fnkey            
+0122 7005            123              jnz kkk1
+0124 E530            124              mov a,flage       ;;fn no enter
+A51 MACRO ASSEMBLER   _÷”                                                                 04/28/2011 19:42:20 PAGE     3
+
+0126 F4              125              cpl a
+0127 F530            126              mov flage,a
+0129                 127     kkk1: 
+                     128     
+0129 2136            129              ajmp return
+012B                 130     keyf:
+012B 30E408          131             jnb acc.4,return
+012E 510B            132     k3: call delay1_1ms
+0130 11DE            133             call keyscan_up
+0132 70FA            134             jnz k3
+                     135                                                      ;keyf
+0134 2136            136             ajmp return
+0136                 137     return:
+0136 E528            138             mov a,fnkey
+0138 600E            139             jz kp1
+013A E529            140             mov a,pluskey
+013C 600A            141             jz kp1
+013E C3              142             clr c
+013F 7428            143             mov a,#28h
+0141 9528            144             subb a,fnkey
+0143 F8              145             mov r0,a
+0144 06              146             inc @r0
+0145 752900          147             mov pluskey,#0
+0148                 148     kp1:
+                     149     
+                     150             ;jz kp2
+                     151     
+                     152     ;kp2:
+                     153     
+0148 22              154             ret
+                     155     
+                     156     
+                     157     ;r0 witch to display
+0149                 158     display_led:
+                     159             ;mov r0,#hourh
+                     160             ;mov r0,#minuteh
+0149 900212          161             mov dptr,#ledcode
+014C 7900            162             mov r1,#0       ;count
+014E                 163     d1:
+                     164             ;mov p1,#0ffh
+014E 75B006          165             mov p3,#6
+0151 E6              166             mov a,@r0
+0152 93              167             movc a,@a+dptr
+0153 F590            168             mov p1,a
+0155 E9              169             mov a,r1
+0156 44F8            170             orl a,#0f8h
+0158 F5B0            171             mov p3,a
+015A 5104            172             call delay_1ms
+015C 09              173             inc r1
+015D 18              174             dec r0
+015E B906ED          175             cjne r1,#6,d1
+0161 22              176             ret
+                     177     
+0162                 178     ajust_led:
+0162 C3              179             clr c
+0163 E520            180             mov a,msecondl
+0165 940A            181             subb a,#10
+0167 4004            182             jc a1
+0169 F520            183             mov msecondl,a
+016B 0521            184             inc msecondh
+016D                 185     a1:
+016D C3              186             clr c
+016E E521            187             mov a,msecondh
+0170 9409            188             subb a,#9
+0172 4004            189             jc a2
+0174 F521            190             mov  msecondh,a
+A51 MACRO ASSEMBLER   _÷”                                                                 04/28/2011 19:42:20 PAGE     4
+
+0176 0522            191             inc secondl
+0178                 192     a2:
+0178 C3              193             clr c                    ;second
+0179 E522            194             mov a,secondl
+017B 940A            195             subb a,#10
+017D 4004            196             jc a3
+017F F522            197             mov secondl,a
+0181 0523            198             inc secondh
+0183                 199     a3:
+0183 C3              200             clr c
+0184 E523            201             mov a,secondh
+0186 9406            202             subb a,#6
+0188 4004            203             jc a4
+018A F523            204             mov secondh,a
+018C 0524            205             inc minutel
+018E                 206     a4:
+018E C3              207             clr c                   ;minute
+018F E524            208             mov a,minutel
+0191 940A            209             subb a,#10
+0193 4004            210             jc a5
+0195 F524            211             mov minutel,a
+0197 0525            212             inc minuteh
+0199                 213     a5:
+0199 C3              214             clr c
+019A E525            215             mov a,minuteh
+019C 9406            216             subb a,#6
+019E 4004            217             jc a6
+01A0 F525            218             mov minuteh,a
+01A2 0526            219             inc hourl
+01A4                 220     a6:
+01A4 C3              221             clr c              ;hour
+01A5 E526            222             mov a,hourl
+01A7 940A            223             subb a,#10
+01A9 4004            224             jc a7
+01AB F526            225             mov hourl,a
+01AD 0527            226             inc hourh
+01AF                 227     a7:
+01AF C3              228             clr c
+01B0 E527            229             mov a,hourh
+01B2 9402            230             subb a,#2
+01B4 400D            231             jc a8
+01B6 C3              232             clr c
+01B7 E526            233             mov a,hourl
+01B9 9404            234             subb a,#4
+01BB 4006            235             jc a8
+01BD 752700          236             mov hourh,#0
+01C0 752600          237             mov hourl,#0
+01C3                 238     a8:
+01C3 21C5            239             ajmp aend
+                     240     
+                     241     
+01C5                 242     aend:
+01C5 22              243             ret
+                     244     
+01C6                 245     int_t1:
+01C6 C0E0            246             push acc
+01C8 C0D0            247             push psw
+01CA 88E0            248             mov acc,r0
+01CC C0E0            249             push acc
+01CE 89E0            250             mov acc,r1
+01D0 C0E0            251             push acc
+                     252     
+01D2 7821            253             mov r0,#msecondh
+01D4 E6              254             mov a,@r0
+01D5 2401            255             add a,#1
+01D7 F6              256             mov @r0,a
+A51 MACRO ASSEMBLER   _÷”                                                                 04/28/2011 19:42:20 PAGE     5
+
+                     257             
+                     258     
+                     259             ;mov p3,#6
+01D8 759000          260             mov p1,#00
+01DB 3162            261             call ajust_led
+                     262             
+01DD D0E0            263             pop acc
+01DF A9E0            264             mov r1,acc
+01E1 D0E0            265             pop acc
+01E3 A8E0            266             mov r0,acc
+01E5 D0D0            267             pop psw
+01E7 D0E0            268             pop acc
+01E9 32              269             reti
+01EA                 270     int_t0:
+01EA C0E0            271             push acc
+01EC C0D0            272             push psw
+01EE 88E0            273             mov acc,r0
+01F0 C0E0            274             push acc
+01F2 89E0            275             mov acc,r1
+01F4 C0E0            276             push acc
+                     277             
+                     278             ;call ajust_led
+                     279             
+01F6 D0E0            280             pop acc
+01F8 A9E0            281             mov r1,acc
+01FA D0E0            282             pop acc
+01FC A8E0            283             mov r0,acc
+01FE D0D0            284             pop psw
+0200 D0E0            285             pop acc
+0202 32              286             reti
+0203 32              287             reti
+                     288     
+                     289     
+0204                 290     delay_1ms:
+0204 7FFA            291             mov r7,#250
+0206                 292     dly:
+0206 00              293             nop             ;1us 12MHZ
+0207 00              294             nop             ;1us 12MHZ 
+0208 DFFC            295             djnz r7,dly ;2us 12MHZ
+020A 22              296             ret
+                     297     
+020B                 298     delay1_1ms:
+020B 7F1F            299             mov r7,#01fh
+020D                 300     dly1:
+020D 00              301             nop             ;1us 12MHZ
+020E 00              302             nop             ;1us 12MHZ 
+020F DFF5            303             djnz r7,dly ;2us 12MHZ
+0211 22              304             ret
+                     305     
+0212 3F065B4F        306     ledcode: db 3fh,06h,5bh,4fh,66h,6dh,7dh,07h,7fh,6fh,0ffh
+0216 666D7D07                
+021A 7F6FFF                  
+                     307             end
+A51 MACRO ASSEMBLER   _÷”                                                                 04/28/2011 19:42:20 PAGE     6
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E             T Y P E  V A L U E   ATTRIBUTES
+
+A1 . . . . . . . .  C ADDR   016DH   A   
+A2 . . . . . . . .  C ADDR   0178H   A   
+A3 . . . . . . . .  C ADDR   0183H   A   
+A4 . . . . . . . .  C ADDR   018EH   A   
+A5 . . . . . . . .  C ADDR   0199H   A   
+A6 . . . . . . . .  C ADDR   01A4H   A   
+A7 . . . . . . . .  C ADDR   01AFH   A   
+A8 . . . . . . . .  C ADDR   01C3H   A   
+ACC. . . . . . . .  D ADDR   00E0H   A   
+AEND . . . . . . .  C ADDR   01C5H   A   
+AJUST_LED. . . . .  C ADDR   0162H   A   
+D1 . . . . . . . .  C ADDR   014EH   A   
+DELAY1_1MS . . . .  C ADDR   020BH   A   
+DELAY_1MS. . . . .  C ADDR   0204H   A   
+DISPLAY_LED. . . .  C ADDR   0149H   A   
+DLY. . . . . . . .  C ADDR   0206H   A   
+DLY1 . . . . . . .  C ADDR   020DH   A   
+EA . . . . . . . .  B ADDR   00A8H.7 A   
+ET0. . . . . . . .  B ADDR   00A8H.1 A   
+ET1. . . . . . . .  B ADDR   00A8H.3 A   
+FLAGE. . . . . . .  N NUMB   0030H   A   
+FNKEY. . . . . . .  N NUMB   0028H   A   
+HOURH. . . . . . .  N NUMB   0027H   A   
+HOURL. . . . . . .  N NUMB   0026H   A   
+INT_T0 . . . . . .  C ADDR   01EAH   A   
+INT_T1 . . . . . .  C ADDR   01C6H   A   
+K1 . . . . . . . .  C ADDR   00FCH   A   
+K2 . . . . . . . .  C ADDR   0117H   A   
+K3 . . . . . . . .  C ADDR   012EH   A   
+KD1. . . . . . . .  C ADDR   00CFH   A   
+KD2. . . . . . . .  C ADDR   00D1H   A   
+KEYF . . . . . . .  C ADDR   012BH   A   
+KEYPLUS. . . . . .  C ADDR   0114H   A   
+KEYPROCESS . . . .  C ADDR   00F3H   A   
+KEYSCAN_DOWN . . .  C ADDR   00C7H   A   
+KEYSCAN_UP . . . .  C ADDR   00DEH   A   
+KK1. . . . . . . .  C ADDR   0112H   A   
+KKK1 . . . . . . .  C ADDR   0129H   A   
+KP1. . . . . . . .  C ADDR   0148H   A   
+KU1. . . . . . . .  C ADDR   00E6H   A   
+KU2. . . . . . . .  C ADDR   00E8H   A   
+LEDCODE. . . . . .  C ADDR   0212H   A   
+LL . . . . . . . .  C ADDR   00C1H   A   
+MAIN . . . . . . .  C ADDR   0080H   A   
+MINUTEH. . . . . .  N NUMB   0025H   A   
+MINUTEL. . . . . .  N NUMB   0024H   A   
+MSECONDH . . . . .  N NUMB   0021H   A   
+MSECONDL . . . . .  N NUMB   0020H   A   
+P1 . . . . . . . .  D ADDR   0090H   A   
+P3 . . . . . . . .  D ADDR   00B0H   A   
+PLUSKEY. . . . . .  N NUMB   0029H   A   
+PSW. . . . . . . .  D ADDR   00D0H   A   
+RETURN . . . . . .  C ADDR   0136H   A   
+SECONDH. . . . . .  N NUMB   0023H   A   
+SECONDL. . . . . .  N NUMB   0022H   A   
+SP . . . . . . . .  D ADDR   0081H   A   
+TH0. . . . . . . .  D ADDR   008CH   A   
+TH1. . . . . . . .  D ADDR   008DH   A   
+TL0. . . . . . . .  D ADDR   008AH   A   
+TL1. . . . . . . .  D ADDR   008BH   A   
+A51 MACRO ASSEMBLER   _÷”                                                                 04/28/2011 19:42:20 PAGE     7
+
+TMOD . . . . . . .  D ADDR   0089H   A   
+TR0. . . . . . . .  B ADDR   0088H.4 A   
+TR1. . . . . . . .  B ADDR   0088H.6 A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)
